@@ -1,6 +1,6 @@
 // App.tsx
-import { useState } from "react";
-import { Toaster } from "react-hot-toast";
+import { useEffect, useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
 import SearchBar from "../SearchBar/SearchBar";
 import { fetchMovies } from "../../services/movieService";
 import type { Movie } from "../../types/movie";
@@ -9,7 +9,7 @@ import Loader from "../Loader/Loader";
 import ErrorMessage from "../ErrorMessage/ErrorMessage";
 import MovieModal from "../MovieModal/MovieModal";
 import css from "./App.module.css";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import ReactPaginateModule from "react-paginate";
 import type { ReactPaginateProps } from "react-paginate";
 import type { ComponentType } from "react";
@@ -38,11 +38,18 @@ export default function App() {
     setSelectedMovie(null);
   };
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isSuccess, isLoading, isError } = useQuery({
     queryKey: ["movies", query, page],
     queryFn: () => fetchMovies(query, page),
     enabled: query !== "",
+    placeholderData: keepPreviousData,
   });
+
+  useEffect(() => {
+    if (isSuccess && data.results.length === 0) {
+      toast.error("No movies found for your request.");
+    }
+  }, [isSuccess, data]);
 
   const handleSearch = (value: string) => {
     setQuery(value);
